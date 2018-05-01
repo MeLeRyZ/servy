@@ -10,13 +10,6 @@ defmodule Servy.Handler do
         |> format_response
     end
 
-    def track(%{ status: 404, path: path } = conv) do
-        IO.puts "Warning: #{path} is in /dev/null"
-        conv
-    end
-
-    def track(conv), do: conv
-
     def rewrite_path(%{path: "/wildlife" } = conv) do
         %{ conv | path: "/wildthings"}
     end
@@ -55,6 +48,34 @@ defmodule Servy.Handler do
         %{ conv | status: 200, resp_body: "Bear #{id}"}
     end
 
+    def route(%{ method: "GET", path: "/about" } = conv) do
+            Path.expand("../../pages", __DIR__)
+            |> Path.join("about.html")
+            |> File.read
+            |> handle_file(conv)
+        end
+        # case File.read(file)  do
+        #     {:ok, content} ->
+        #         %{ conv | status: 200, resp_body: content }
+        #     {:error, :enoent} ->
+        #         %{ conv | status: 404, resp_body: "File not found!" }
+        #     {:error, reason} ->
+        #         %{ conv | status: 500, resp_body: "File error: #{reason}" }
+        # end
+        #end
+
+        def handle_file({ :ok, content }, conv) do
+            %{ conv | status: 200, resp_body: content }
+        end
+
+        def handle_file({ :error, :enoent }, conv) do
+            %{ conv | status: 404, resp_body: "File not found!" }
+        end
+
+        def handle_file({ :error, reason }, conv) do
+            %{ conv | status: 500, resp_body: "File error: #{reason}" }
+        end
+
     def route(%{ path: path} = conv) do
         %{ conv | status: 404, resp_body: "No #{path} here!"}
     end
@@ -69,15 +90,22 @@ defmodule Servy.Handler do
         """
     end
 
+    def track(%{ status: 404, path: path } = conv) do
+            IO.puts "Warning: #{path} is in /dev/null"
+            conv
+    end
+
+    def track(conv), do: conv
+
     defp status_reason(code) do
-        %{
-            200 => "OK",
-            201 => "Created",
-            401 => "Unauthorized",
-            403 => "Forbidden",
-            404 => "Not Found",
-            500 => "Internal Server Error"
-        }[code]
+            %{
+                200 => "OK",
+                201 => "Created",
+                401 => "Unauthorized",
+                403 => "Forbidden",
+                404 => "Not Found",
+                500 => "Internal Server Error"
+            }[code]
     end
 
 end
@@ -111,6 +139,15 @@ IO.puts response
 
 request = """
 GET /wildlife HTTP/1.1
+Host: example.com
+User-agent: ExampleBrowser/1.0
+Accept: */*
+"""
+response = Servy.Handler.handle(request)
+IO.puts response
+
+request = """
+GET /about HTTP/1.1
 Host: example.com
 User-agent: ExampleBrowser/1.0
 Accept: */*
