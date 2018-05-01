@@ -1,6 +1,9 @@
 defmodule Servy.Handler do
     def handle(request) do
-        request |> parse |> route |> format_response
+        request
+        |> parse
+        |> route
+        |> format_response
     end
 
     def parse(request) do
@@ -13,7 +16,8 @@ defmodule Servy.Handler do
     end
 
     def route(conv) do
-        conv = %{ method: "GET", path: "/wildthings", resp_body: "Bears, Lions, Pigeons"}
+        %{ conv | resp_body: "Bears, Lions, Pigeons"}
+        #conv = %{ method: "GET", path: "/wildthings", resp_body: }
         # > conv.path - only works if the key is atom
     end
 
@@ -21,9 +25,9 @@ defmodule Servy.Handler do
         """
         HTTP/1.1 200 OK
         Content-Type: text/html
-        Content-Length: 20
+        Content-Length: #{String.length(conv.resp_body) }
 
-        Bears, Lions, Pigeons
+        #{conv.resp_body}
         """
     end
 
