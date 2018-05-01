@@ -1,5 +1,16 @@
 defmodule Servy.Handler do
 
+    @moduledoc """
+    Handles HTTP requests.
+    """
+    @pages_path Path.expand("../../pages", __DIR__)
+
+    import Servy.Plugins, only: [rewrite_path: 1, log: 1, track: 1]
+    import Servy.Parser, only: [parse: 1]
+
+    @doc """
+    Transforms the request into response.
+    """
     def handle(request) do
         request
         |> parse
@@ -8,26 +19,6 @@ defmodule Servy.Handler do
         |> route
         |> track
         |> format_response
-    end
-
-    def rewrite_path(%{path: "/wildlife" } = conv) do
-        %{ conv | path: "/wildthings"}
-    end
-
-    def rewrite_path(conv), do: conv
-
-    def log(conv),  do:    IO.inspect conv
-
-    def parse(request) do
-        [method, path, _] =
-                    request
-                    |> String.split("\n")
-                    |> List.first
-                    |> String.split(" ")
-        %{ method: method,
-              path: path,
-              resp_body: "",
-              status: nil}
     end
 
     # def route(conv) do
@@ -49,11 +40,11 @@ defmodule Servy.Handler do
     end
 
     def route(%{ method: "GET", path: "/about" } = conv) do
-            Path.expand("../../pages", __DIR__)
+            @pages_path
             |> Path.join("about.html")
             |> File.read
             |> handle_file(conv)
-        end
+    end
         # case File.read(file)  do
         #     {:ok, content} ->
         #         %{ conv | status: 200, resp_body: content }
@@ -89,13 +80,6 @@ defmodule Servy.Handler do
         #{conv.resp_body}
         """
     end
-
-    def track(%{ status: 404, path: path } = conv) do
-            IO.puts "Warning: #{path} is in /dev/null"
-            conv
-    end
-
-    def track(conv), do: conv
 
     defp status_reason(code) do
             %{
